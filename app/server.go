@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"strings"
 )
 
 // Ensures gofmt doesn't remove the "net" and "os" imports above (feel free to remove this!)
@@ -27,5 +28,27 @@ func main() {
 	}
 	defer conn.Close()
 
-	conn.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
+	buffer := make([]byte, 1024)
+	_, err = conn.Read(buffer)
+	if err != nil {
+		fmt.Println("Error reading request: ", err.Error())
+		os.Exit(1)
+	}
+
+	path := extract_path(string(buffer))
+
+	switch path {
+	case "/":
+		{
+			conn.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
+		}
+	default:
+		{
+			conn.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
+		}
+	}
+}
+
+func extract_path(request string) string {
+	return strings.Split(request, " ")[1]
 }
