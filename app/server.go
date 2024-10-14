@@ -2,10 +2,13 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net"
 	"os"
+	"os/signal"
 	"regexp"
 	"strings"
+	"syscall"
 )
 
 type Route struct {
@@ -14,24 +17,53 @@ type Route struct {
 }
 
 func main() {
-	// You can use print statements as follows for debugging, they'll be visible when running tests.
-	fmt.Println("Logs from your program will appear here!")
-
-	l, err := net.Listen("tcp", "0.0.0.0:4221")
+	listener, err := net.Listen("tcp", "0.0.0.0:4221")
 	if err != nil {
-		fmt.Println("Failed to bind to port 4221")
+		log.Println("Failed to bind to port 4221")
 		os.Exit(1)
 	}
 
-	conn, err := l.Accept()
-	if err != nil {
-		fmt.Println("Error accepting connection: ", err.Error())
-		os.Exit(1)
+	signals := make(chan os.Signal, 1)
+	done := make(chan bool, 1)
+
+	signal.Notify(signals, syscall.SIGINT, syscall.SIGKILL, syscall.SIGTERM)
+
+	go handle_signals(signals, done, listener)
+	go accept_connection(listener)
+
+	log.Println("Running... Press Ctrl+C to exit.")
+	<-done
+	log.Println("Exiting program.")
+}
+
+func handle_signals(signals chan os.Signal, done chan bool, listener net.Listener) {
+	<-signals
+	log.Println("Received interrupt, shutting down...")
+	listener.Close()
+	done <- true
+}
+
+func accept_connection(listener net.Listener) {
+	for {
+		conn, err := listener.Accept()
+		if err != nil {
+			if opErr, ok := err.(*net.OpError); ok && !opErr.Temporary() {
+				log.Println("Server shutdown in progress...")
+				return
+			}
+			log.Println("Error accepting connection: ", err.Error())
+			continue
+		}
+
+		go handle_connection(conn)
 	}
+}
+
+func handle_connection(conn net.Conn) {
 	defer conn.Close()
 
 	buffer := make([]byte, 4086)
-	_, err = conn.Read(buffer)
+	_, err := conn.Read(buffer)
 	if err != nil {
 		fmt.Println("Error reading request: ", err.Error())
 		os.Exit(1)
@@ -42,8 +74,6 @@ func main() {
 		fmt.Println("Error parsing request: ", err.Error())
 		os.Exit(1)
 	}
-
-	path := extract_path(string(buffer))
 
 	mux := []Route{
 		{
@@ -74,7 +104,7 @@ func main() {
 
 	for _, route := range mux {
 		re := regexp.MustCompile(route.pattern)
-		if inputs := re.FindStringSubmatch(path); re.MatchString(path) {
+		if inputs := re.FindStringSubmatch(request.path); re.MatchString(request.path) {
 			route.handler(inputs)
 			return
 		}
