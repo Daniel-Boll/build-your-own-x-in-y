@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"net"
@@ -11,41 +12,59 @@ import (
 	"syscall"
 )
 
+type Server struct {
+	listener  net.Listener
+	directory string
+	signals   chan os.Signal
+	done      chan bool
+}
+
 type Route struct {
 	pattern string
 	handler func(inputs []string)
 }
 
+var (
+	listen    = flag.String("address", ":4221", "The address to listen on")
+	directory = flag.String("directory", "/tmp", "The directory to serve files from")
+)
+
 func main() {
-	listener, err := net.Listen("tcp", "0.0.0.0:4221")
+	flag.Parse()
+
+	listener, err := net.Listen("tcp", *listen)
 	if err != nil {
 		log.Println("Failed to bind to port 4221")
 		os.Exit(1)
 	}
 
-	signals := make(chan os.Signal, 1)
-	done := make(chan bool, 1)
+	server := Server{
+		listener:  listener,
+		directory: *directory,
+		signals:   make(chan os.Signal, 1),
+		done:      make(chan bool, 1),
+	}
 
-	signal.Notify(signals, syscall.SIGINT, syscall.SIGKILL, syscall.SIGTERM)
+	signal.Notify(server.signals, syscall.SIGINT, syscall.SIGKILL, syscall.SIGTERM)
 
-	go handle_signals(signals, done, listener)
-	go accept_connection(listener)
+	go server.handle_signals()
+	go server.accept_connection()
 
 	log.Println("Running... Press Ctrl+C to exit.")
-	<-done
+	<-server.done
 	log.Println("Exiting program.")
 }
 
-func handle_signals(signals chan os.Signal, done chan bool, listener net.Listener) {
-	<-signals
+func (server *Server) handle_signals() {
+	<-server.signals
 	log.Println("Received interrupt, shutting down...")
-	listener.Close()
-	done <- true
+	server.listener.Close()
+	server.done <- true
 }
 
-func accept_connection(listener net.Listener) {
+func (server *Server) accept_connection() {
 	for {
-		conn, err := listener.Accept()
+		conn, err := server.listener.Accept()
 		if err != nil {
 			if opErr, ok := err.(*net.OpError); ok && !opErr.Temporary() {
 				log.Println("Server shutdown in progress...")
@@ -98,6 +117,32 @@ func handle_connection(conn net.Conn) {
 			handler: func(inputs []string) {
 				content := inputs[1]
 				conn.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s", len(content), content)))
+			},
+		},
+		{
+			pattern: "^/files/(.*)$",
+			handler: func(inputs []string) {
+				filepath := inputs[1]
+
+				file, err := os.Open(filepath)
+				if err != nil {
+					conn.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
+					return
+				}
+
+				file_info, err := file.Stat()
+				if err != nil {
+					conn.Write([]byte("HTTP/1.1 500 Internal Server Error\r\n\r\n"))
+					return
+				}
+				file_content := make([]byte, file_info.Size())
+				_, err = file.Read(file_content)
+				if err != nil {
+					conn.Write([]byte("HTTP/1.1 500 Internal Server Error\r\n\r\n"))
+					return
+				}
+
+				conn.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: %d\r\n\r\n%s", file_info.Size(), string(file_content))))
 			},
 		},
 	}
