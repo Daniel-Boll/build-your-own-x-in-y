@@ -8,10 +8,6 @@ import (
 	"strings"
 )
 
-// Ensures gofmt doesn't remove the "net" and "os" imports above (feel free to remove this!)
-var _ = net.Listen
-var _ = os.Exit
-
 type Route struct {
 	pattern string
 	handler func(inputs []string)
@@ -34,10 +30,16 @@ func main() {
 	}
 	defer conn.Close()
 
-	buffer := make([]byte, 1024)
+	buffer := make([]byte, 4086)
 	_, err = conn.Read(buffer)
 	if err != nil {
 		fmt.Println("Error reading request: ", err.Error())
+		os.Exit(1)
+	}
+
+	request, err := parse_request(buffer)
+	if err != nil {
+		fmt.Println("Error parsing request: ", err.Error())
 		os.Exit(1)
 	}
 
@@ -51,14 +53,21 @@ func main() {
 			},
 		},
 		{
+			pattern: "^/user-agent$",
+			handler: func(inputs []string) {
+				user_agent, err := request.try_get_header("User-Agent")
+				if err != nil {
+					conn.Write([]byte("HTTP/1.1 400 Bad Request\r\n\r\n"))
+					return
+				}
+				conn.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s", len(user_agent), user_agent)))
+			},
+		},
+		{
 			pattern: "^/echo/(.*)$",
 			handler: func(inputs []string) {
 				content := inputs[1]
-				conn.Write([]byte(fmt.Sprintf(`HTTP/1.1 200 OK\r\n
-					Content-Type: text/plain\r\n
-					Content-Length: %d\r\n\r\n
-					%s`,
-					len(content), content)))
+				conn.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s", len(content), content)))
 			},
 		},
 	}
