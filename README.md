@@ -6,7 +6,7 @@ This repository is dedicated to showcasing solutions to common system-level prob
 
 | Problem                    | Rust | Go  |
 |-----------------------------|------|-----|
-| Build your own HTTP server   |      |     |
+| Build your own HTTP server   |      | [8/11 Stages](https://github.com/Daniel-Boll/build-your-own-x-in-y/tree/http-server-go) |
 | Build your own Redis         |      |     |
 | Build your own SQLite        |      |     |
 | Build your own Interpreter   |      |     |
