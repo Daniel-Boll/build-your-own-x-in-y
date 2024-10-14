@@ -74,11 +74,11 @@ func (server *Server) accept_connection() {
 			continue
 		}
 
-		go handle_connection(conn)
+		go server.handle_connection(conn)
 	}
 }
 
-func handle_connection(conn net.Conn) {
+func (server *Server) handle_connection(conn net.Conn) {
 	defer conn.Close()
 
 	buffer := make([]byte, 4086)
@@ -124,7 +124,7 @@ func handle_connection(conn net.Conn) {
 			handler: func(inputs []string) {
 				filepath := inputs[1]
 
-				file, err := os.Open(filepath)
+				file, err := os.Open(server.directory + "/" + filepath)
 				if err != nil {
 					conn.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
 					return
@@ -156,6 +156,7 @@ func handle_connection(conn net.Conn) {
 	}
 
 	// Default case
+	log.Println("No route matched, returning 404")
 	conn.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
 }
 
