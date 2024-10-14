@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -10,6 +11,7 @@ type Request struct {
 	path         string
 	http_version string
 	headers      []Header
+	body         string
 }
 
 type Header struct {
@@ -51,16 +53,39 @@ func parse_request(request_ []byte) (Request, error) {
 		headers = append(headers, header)
 	}
 
+	body := ""
+
+	content_length_str, _ := try_get_headers(headers, "Content-Length")
+	content_length, err := strconv.Atoi(content_length_str)
+
+	if err == nil {
+		header_offset := 1 + len(headers)
+		remaining_lines := lines[header_offset:]
+		body = strings.Join(remaining_lines, "")
+		body = body[:content_length]
+	}
+
 	return Request{
 		method:       request_line[0],
 		path:         request_line[1],
 		http_version: request_line[2],
 		headers:      headers,
+		body:         body,
 	}, nil
 }
 
 func (request *Request) try_get_header(key string) (string, error) {
 	for _, header := range request.headers {
+		if header.key == key {
+			return header.value, nil
+		}
+	}
+
+	return "", fmt.Errorf("Header not found: %s", key)
+}
+
+func try_get_headers(headers []Header, key string) (string, error) {
+	for _, header := range headers {
 		if header.key == key {
 			return header.value, nil
 		}

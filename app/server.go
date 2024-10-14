@@ -20,6 +20,7 @@ type Server struct {
 }
 
 type Route struct {
+	method  string
 	pattern string
 	handler func(inputs []string)
 }
@@ -96,12 +97,14 @@ func (server *Server) handle_connection(conn net.Conn) {
 
 	mux := []Route{
 		{
+			method:  "GET",
 			pattern: "^/$",
 			handler: func(inputs []string) {
 				conn.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
 			},
 		},
 		{
+			method:  "GET",
 			pattern: "^/user-agent$",
 			handler: func(inputs []string) {
 				user_agent, err := request.try_get_header("User-Agent")
@@ -113,6 +116,7 @@ func (server *Server) handle_connection(conn net.Conn) {
 			},
 		},
 		{
+			method:  "GET",
 			pattern: "^/echo/(.*)$",
 			handler: func(inputs []string) {
 				content := inputs[1]
@@ -120,6 +124,7 @@ func (server *Server) handle_connection(conn net.Conn) {
 			},
 		},
 		{
+			method:  "GET",
 			pattern: "^/files/(.*)$",
 			handler: func(inputs []string) {
 				filepath := inputs[1]
@@ -145,11 +150,36 @@ func (server *Server) handle_connection(conn net.Conn) {
 				conn.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: %d\r\n\r\n%s", file_info.Size(), string(file_content))))
 			},
 		},
+		{
+			method:  "POST",
+			pattern: "^/files/(.*)$",
+			handler: func(inputs []string) {
+				filename := inputs[1]
+
+				file, err := os.Create(server.directory + "/" + filename)
+				if err != nil {
+					conn.Write([]byte("HTTP/1.1 500 Internal Server Error\r\n\r\n"))
+					return
+				}
+
+				log.Println(len(request.body))
+				n, err := file.Write([]byte(request.body))
+				if err != nil {
+					conn.Write([]byte("HTTP/1.1 500 Internal Server Error\r\n\r\n"))
+					return
+				}
+
+				log.Printf("Written %d bytes to %s", n, filename)
+
+				conn.Write([]byte("HTTP/1.1 201 Created\r\n\r\n"))
+			},
+		},
 	}
 
 	for _, route := range mux {
 		re := regexp.MustCompile(route.pattern)
-		if inputs := re.FindStringSubmatch(request.path); re.MatchString(request.path) {
+		inputs := re.FindStringSubmatch(request.path)
+		if re.MatchString(request.path) && request.method == route.method {
 			route.handler(inputs)
 			return
 		}
