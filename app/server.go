@@ -54,7 +54,11 @@ func main() {
 			pattern: "^/echo/(.*)$",
 			handler: func(inputs []string) {
 				content := inputs[1]
-				conn.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s", len(content), content)))
+				conn.Write([]byte(fmt.Sprintf(`HTTP/1.1 200 OK\r\n
+					Content-Type: text/plain\r\n
+					Content-Length: %d\r\n\r\n
+					%s`,
+					len(content), content)))
 			},
 		},
 	}
