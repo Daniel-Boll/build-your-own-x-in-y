@@ -120,7 +120,19 @@ func (server *Server) handle_connection(conn net.Conn) {
 			pattern: "^/echo/(.*)$",
 			handler: func(inputs []string) {
 				content := inputs[1]
-				conn.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s", len(content), content)))
+
+				accept_encoding, _ := request.try_get_header("Accept-Encoding")
+
+				var response []byte
+				response = append(response, "HTTP/1.1 200 OK\r\n"...)
+				response = append(response, "Content-Type: text/plain\r\n"...)
+				if strings.Contains(accept_encoding, "gzip") {
+					response = append(response, "Content-Encoding: gzip\r\n"...)
+				}
+				response = append(response, fmt.Sprintf("Content-Length: %d\r\n\r\n", len(content))...)
+				response = append(response, content...)
+
+				conn.Write(response)
 			},
 		},
 		{
