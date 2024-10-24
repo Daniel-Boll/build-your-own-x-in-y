@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"compress/gzip"
 	"flag"
 	"fmt"
 	"log"
@@ -128,9 +130,14 @@ func (server *Server) handle_connection(conn net.Conn) {
 				response = append(response, "Content-Type: text/plain\r\n"...)
 				if strings.Contains(accept_encoding, "gzip") {
 					response = append(response, "Content-Encoding: gzip\r\n"...)
+					gzip_content := gzip_compress([]byte(content))
+
+					response = append(response, fmt.Sprintf("Content-Length: %d\r\n\r\n", len(gzip_content))...)
+					response = append(response, gzip_content...)
+				} else {
+					response = append(response, fmt.Sprintf("Content-Length: %d\r\n\r\n%s", len(content), content)...)
+					response = append(response, content...)
 				}
-				response = append(response, fmt.Sprintf("Content-Length: %d\r\n\r\n", len(content))...)
-				response = append(response, content...)
 
 				conn.Write(response)
 			},
@@ -200,6 +207,18 @@ func (server *Server) handle_connection(conn net.Conn) {
 	// Default case
 	log.Println("No route matched, returning 404")
 	conn.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
+}
+
+func gzip_compress(b []byte) []byte {
+	var buf bytes.Buffer
+	gz := gzip.NewWriter(&buf)
+	if _, err := gz.Write(b); err != nil {
+		log.Fatal(err)
+	}
+	if err := gz.Close(); err != nil {
+		log.Fatal(err)
+	}
+	return buf.Bytes()
 }
 
 func extract_path(request string) string {
