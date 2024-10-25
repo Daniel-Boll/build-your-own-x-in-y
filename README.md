@@ -4,18 +4,18 @@ This repository is dedicated to showcasing solutions to common system-level prob
 
 ## Problems and Languages
 
-| Problem                    | Rust | Go  |
-|-----------------------------|------|-----|
-| Build your own HTTP server   |      | [11/11 Stages](https://github.com/Daniel-Boll/build-your-own-x-in-y/tree/http-server-go) |
-| Build your own Redis         |      |     |
-| Build your own SQLite        |      |     |
-| Build your own Interpreter   |      |     |
-| Build your own Shell         |      |     |
-| Build your own Git           |      |     |
-| Build your own DNS server    |      |     |
-| Build your own grep          |      |     |
-| Build your own BitTorrent    |      |     |
-| Build your own Kafka         |      |     |
+| Problem                    | Rust | Go  | Zig |
+|-----------------------------|------|-----|-----|
+| Build your own HTTP server   |      | [11/11 Stages](https://github.com/Daniel-Boll/build-your-own-x-in-y/tree/http-server-go) | |
+| Build your own Redis         |      |     |     |
+| Build your own SQLite        |      |     |     |
+| Build your own Interpreter   |      |     |     |
+| Build your own Shell         |      |     |     |
+| Build your own Git           |      |     |     |
+| Build your own DNS server    |      |     |     |
+| Build your own grep          |      |     |     |
+| Build your own BitTorrent    |      |     |     |
+| Build your own Kafka         |      |     | [4/19 Stages](https://github.com/Daniel-Boll/build-your-own-x-in-y/tree/bittorrent-zig) |
 
 ## How It Works
 
