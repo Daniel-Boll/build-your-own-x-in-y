@@ -1,6 +1,6 @@
 <h1 align="center">Build Your Own X in Y</h1>
 
-This repository is dedicated to showcasing solutions to common system-level problems, implemented in both Rust and Go. Each problem will eventually have solutions written in both languages, with links provided to the respective branches.
+This repository is dedicated to showcasing solutions to common system-level problems, implemented in Rust, Go and Zig. Each problem will eventually have solutions written in more languages, with links provided to the respective branches.
 
 ## Problems and Languages
 
