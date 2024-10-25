@@ -14,29 +14,31 @@ pub fn main() !void {
     const command = args[1];
 
     if (std.mem.eql(u8, command, "decode")) {
-        // You can use print statements as follows for debugging, they'll be visible when running tests.
-        // try stdout.print("Logs from your program will appear here\n", .{});
-
-        // Uncomment this block to pass the first stage
         const encodedStr = args[2];
         const decodedStr = decodeBencode(encodedStr) catch {
             try stdout.print("Invalid encoded value\n", .{});
             std.process.exit(1);
         };
         var string = std.ArrayList(u8).init(allocator);
-        try std.json.stringify(decodedStr.*, .{}, string.writer());
+        try std.json.stringify(decodedStr, .{}, string.writer());
         const jsonStr = try string.toOwnedSlice();
         try stdout.print("{s}\n", .{jsonStr});
     }
 }
 
-fn decodeBencode(encodedValue: []const u8) !*const []const u8 {
+fn decodeBencode(encodedValue: []const u8) !std.json.Value {
     if (encodedValue[0] >= '0' and encodedValue[0] <= '9') {
         const firstColon = std.mem.indexOf(u8, encodedValue, ":");
         if (firstColon == null) {
             return error.InvalidArgument;
         }
-        return &encodedValue[firstColon.? + 1 ..];
+        return std.json.Value{
+            .string = encodedValue[firstColon.? + 1 .. encodedValue.len],
+        };
+    } else if (encodedValue[0] == 'i' and encodedValue[encodedValue.len - 1] == 'e') {
+        const innerValueInt = try std.fmt.parseInt(i64, encodedValue[1 .. encodedValue.len - 1], 10);
+
+        return std.json.Value{ .integer = innerValueInt };
     } else {
         try stdout.print("Only strings are supported at the moment\n", .{});
         std.process.exit(1);
