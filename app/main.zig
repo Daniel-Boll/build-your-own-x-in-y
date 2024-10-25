@@ -1,4 +1,5 @@
 const std = @import("std");
+const bencode_parser = @import("bencode.zig");
 const stdout = std.io.getStdOut().writer();
 const allocator = std.heap.page_allocator;
 
@@ -15,32 +16,13 @@ pub fn main() !void {
 
     if (std.mem.eql(u8, command, "decode")) {
         const encodedStr = args[2];
-        const decodedStr = decodeBencode(encodedStr) catch {
-            try stdout.print("Invalid encoded value\n", .{});
-            std.process.exit(1);
+        const bencoded_value = try bencode_parser.parse(allocator, encodedStr);
+        defer bencoded_value.free(allocator) catch {
+          std.process.exit(1);
         };
+
         var string = std.ArrayList(u8).init(allocator);
-        try std.json.stringify(decodedStr, .{}, string.writer());
-        const jsonStr = try string.toOwnedSlice();
-        try stdout.print("{s}\n", .{jsonStr});
-    }
-}
-
-fn decodeBencode(encodedValue: []const u8) !std.json.Value {
-    if (encodedValue[0] >= '0' and encodedValue[0] <= '9') {
-        const firstColon = std.mem.indexOf(u8, encodedValue, ":");
-        if (firstColon == null) {
-            return error.InvalidArgument;
-        }
-        return std.json.Value{
-            .string = encodedValue[firstColon.? + 1 .. encodedValue.len],
-        };
-    } else if (encodedValue[0] == 'i' and encodedValue[encodedValue.len - 1] == 'e') {
-        const innerValueInt = try std.fmt.parseInt(i64, encodedValue[1 .. encodedValue.len - 1], 10);
-
-        return std.json.Value{ .integer = innerValueInt };
-    } else {
-        try stdout.print("Only strings are supported at the moment\n", .{});
-        std.process.exit(1);
+        try std.json.stringify(try bencoded_value.toJSON(allocator), .{}, string.writer());
+        try stdout.print("{s}\n", .{try string.toOwnedSlice()});
     }
 }
