@@ -4,7 +4,7 @@ This repository is dedicated to showcasing solutions to common system-level prob
 
 ## Problems and Languages
 
-| Problem                    | Rust | Go  | Zig |
+| Problem                    | [![Rust logo](https://skillicons.dev/icons?i=rust)](https://www.rust-lang.org/) | [![Golang logo](https://skillicons.dev/icons?i=go)](https://go.dev/) | [![ZIG logo](https://skillicons.dev/icons?i=zig)](https://ziglang.org/) |
 |-----------------------------|------|-----|-----|
 | Build your own HTTP server   |      | [11/11 Stages](https://github.com/Daniel-Boll/build-your-own-x-in-y/tree/http-server-go) | |
 | Build your own Redis         |      |     |     |
