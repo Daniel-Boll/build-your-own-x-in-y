@@ -5,6 +5,7 @@ pub mod schema_layer;
 use cell::Cell;
 use page::Page;
 
+#[allow(clippy::too_long_first_doc_paragraph)]
 /// The b-tree algorithm provides key/data storage with unique and ordered keys on page-oriented storage devices.
 /// For background information on b-trees, see Knuth, The Art Of Computer Programming, Volume 3 "Sorting and Searching", pages 471-479.
 /// Two variants of b-trees are used by SQLite. "Table b-trees" use a 64-bit signed integer key and store all data in the leaves.
@@ -67,23 +68,13 @@ pub struct Header {
 
 impl Header {
   pub fn new(page: Page) -> Self {
-    let page_type = page.read_u8(0);
-    let first_freeblock = page.read_u16(1);
-    let num_cells = page.read_u16(3);
-    let start_cell_content = page.read_u16(5);
-    let num_fragmented_free_bytes = page.read_u8(7);
-    let right_most_pointer = page.read_u32(8);
-
-    println!(
-      r#"
-      page_type: {page_type}
-      first_freeblock: {first_freeblock}
-      num_cells: {num_cells}
-      start_cell_content: {start_cell_content}
-      num_fragmented_free_bytes: {num_fragmented_free_bytes}
-      right_most_pointer:{right_most_pointer}
-    "#
-    );
+    #[allow(clippy::identity_op)]
+    let page_type = page.read_u8(page.offset + 0);
+    let first_freeblock = page.read_u16(page.offset + 1);
+    let num_cells = page.read_u16(page.offset + 3);
+    let start_cell_content = page.read_u16(page.offset + 5);
+    let num_fragmented_free_bytes = page.read_u8(page.offset + 7);
+    let right_most_pointer = page.read_u32(page.offset + 8);
 
     Self {
       page_type,

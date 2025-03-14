@@ -22,11 +22,11 @@ impl Page {
   }
 
   fn at(&self, offset: usize) -> u8 {
-    self.data[offset]
+    self.data[offset - self.offset]
   }
 
   fn slice(&self, offset_range: Range<usize>) -> &[u8] {
-    &self.data[offset_range]
+    &self.data[offset_range.start - self.offset..offset_range.end - self.offset]
   }
 
   pub fn read_u8(&self, offset: usize) -> u8 {

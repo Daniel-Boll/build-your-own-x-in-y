@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use std::convert::TryInto;
 
 /// # [Record Format](https://www.sqlite.org/fileformat.html#record-format)
@@ -24,18 +24,48 @@ use std::convert::TryInto;
 /// |N≥12 and even|(N-12)/2    |Value is a BLOB that is (N-12)/2 bytes in length.                                                                                                                                                                                                                                                           |
 /// |N≥13 and odd |(N-13)/2    |Value is a string in the text encoding and (N-13)/2 bytes in length. The nul terminator is not stored.                                                                                                                                                                                                      |
 /// +-------------+------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Record {
   pub values: Vec<Value>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Value {
   Null,
   Integer(i64),
   Float(f64),
   Blob(Vec<u8>),
   Text(String),
+}
+
+impl Value {
+  pub fn as_integer(&self) -> i64 {
+    match self {
+      Value::Integer(value) => *value,
+      _ => panic!("Value is not an integer"),
+    }
+  }
+
+  pub fn as_float(&self) -> f64 {
+    match self {
+      Value::Float(value) => *value,
+      _ => panic!("Value is not a float"),
+    }
+  }
+
+  pub fn as_blob(&self) -> &[u8] {
+    match self {
+      Value::Blob(value) => value,
+      _ => panic!("Value is not a blob"),
+    }
+  }
+
+  pub fn as_text(&self) -> &str {
+    match self {
+      Value::Text(value) => value,
+      _ => panic!("Value is not a text"),
+    }
+  }
 }
 
 impl Record {

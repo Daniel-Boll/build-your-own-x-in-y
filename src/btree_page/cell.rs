@@ -1,4 +1,4 @@
-use super::{Header, page::Page};
+use super::{Header, page::Page, schema_layer::Record};
 
 /// Table B-Tree Leaf Cell (header 0x0d):
 ///
@@ -29,7 +29,7 @@ pub enum Cell {
   TableLeaf {
     payload_size: u64,
     rowid: u64,
-    payload: Vec<u8>,
+    record: Record,
     overflow_page: Option<u32>,
   },
   TableInterior {
@@ -54,7 +54,7 @@ impl Cell {
     let mut cells = Vec::new();
 
     for i in 0..header.num_cells {
-      let mut cell_offset = page.read_u16(8 + (i as usize) * 2) as usize;
+      let mut cell_offset = page.read_u16(page.offset + (8 + (i as usize) * 2)) as usize;
       match header.page_type {
         0x0D => {
           let (payload_size, varint_offset) = page.read_varint(cell_offset);
@@ -71,7 +71,7 @@ impl Cell {
           cells.push(Cell::TableLeaf {
             payload_size,
             rowid,
-            payload,
+            record: Record::parse(&payload).expect("Failed to parse record"),
             overflow_page,
           });
         }
