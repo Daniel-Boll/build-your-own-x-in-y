@@ -5,28 +5,34 @@ use std::{
 };
 
 use anyhow::Result;
+use crate::btree_page::schema_layer::Record;
 
 #[derive(Debug, Clone)]
 pub struct Page {
   pub data: Vec<u8>,
   pub offset: usize,
+  pub page_number: u32,
 }
 
 impl Page {
   pub fn try_from_file(file: &mut File, page_number: u32, page_size: u16) -> Result<Self> {
-    let mut data = vec![0; page_size as usize];
-    let offset: usize = 100 + (page_number * page_size as u32) as usize;
+    let offset = if page_number == 1 {
+      100
+    } else {
+      (page_number - 1) as usize * page_size as usize
+    };
     file.seek(SeekFrom::Start(offset as u64))?;
+    let mut data = vec![0; page_size as usize];
     file.read_exact(&mut data)?;
-    Ok(Self { data, offset })
+    Ok(Self { data, offset, page_number })
   }
 
   fn at(&self, offset: usize) -> u8 {
-    self.data[offset - self.offset]
+    self.data[offset]
   }
 
   fn slice(&self, offset_range: Range<usize>) -> &[u8] {
-    &self.data[offset_range.start - self.offset..offset_range.end - self.offset]
+    &self.data[offset_range]
   }
 
   pub fn read_u8(&self, offset: usize) -> u8 {
@@ -72,5 +78,20 @@ impl Page {
     }
 
     (value, size)
+  }
+
+  pub fn parse_table_leaf_page(&self) -> Vec<Record> {
+    let mut records = Vec::new();
+    let num_cells = u16::from_be_bytes([self.data[3], self.data[4]]);
+
+    for i in 0..num_cells {
+      let offset_index = 8 + (i as usize * 2);
+      let cell_offset = u16::from_be_bytes([self.data[offset_index], self.data[offset_index + 1]]) as usize;
+
+      let record = Record::parse(&self.data[cell_offset..]).expect("This to work");
+      records.push(record);
+    }
+
+    records
   }
 }

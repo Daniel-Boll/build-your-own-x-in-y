@@ -34,6 +34,7 @@ use anyhow::{Error, Result};
 /// |92    |4   |The version-valid-for number.                                                                                                            |
 /// |96    |4   |SQLITE_VERSION_NUMBER                                                                                                                    |
 /// +------+----+-----------------------------------------------------------------------------------------------------------------------------------------+
+#[derive(Debug, Clone)]
 pub struct DbHeader {
   pub header: [u8; 16],
   pub page_size: u16,

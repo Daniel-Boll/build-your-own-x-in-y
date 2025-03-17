@@ -1,8 +1,7 @@
+#![feature(str_as_str)]
+
 use anyhow::{Result, bail};
-use codecrafters_sqlite::btree_page::cell::Cell;
-use codecrafters_sqlite::btree_page::{BTree, page::Page};
-use codecrafters_sqlite::dbheader::DbHeader;
-use std::fs::File;
+use codecrafters_sqlite::SQLite;
 
 fn main() -> Result<()> {
   // Parse arguments
@@ -13,39 +12,22 @@ fn main() -> Result<()> {
     _ => {}
   }
 
-  // Parse command and act accordingly
-  // let args = ["", "sample.db", ".tables"];
-  let command = &args[2];
-  match command.as_str() {
-    ".tables" => {
-      let mut file = File::open(&args[1])?;
-      let db_header = DbHeader::try_from(&mut file)?;
-      let btree = BTree::new(Page::try_from_file(&mut file, 0, db_header.page_size)?);
-
-      for (i, cell) in btree.cells.iter().enumerate() {
-        if i == 1 {
-          continue;
-        }
-
-        if let Cell::TableLeaf { record, .. } = cell {
-          print!(
-            "{}{}",
-            record.values[2].as_text(),
-            if i < btree.cells.len() - 1 { " " } else { "\n" }
-          );
-        }
-      }
-    }
-    ".dbinfo" => {
-      let mut file = File::open(&args[1])?;
-      let db_header = DbHeader::try_from(&mut file)?;
-      let btree = BTree::new(Page::try_from_file(&mut file, 0, db_header.page_size)?);
-
-      println!("database page size: {}", db_header.page_size);
-      println!("number of tables: {}", btree.header.num_cells);
-    }
-    _ => bail!("Missing or invalid command passed: {}", command),
-  }
+  handle_command(&args[2], &args)?;
 
   Ok(())
+}
+
+fn handle_command(command: &str, args: &[String]) -> anyhow::Result<()> {
+  let mut sqlite = SQLite::open(&args[1])?;
+  match command.as_str() {
+    ".tables" => sqlite.list_tables(),
+    ".dbinfo" => sqlite.print_db_info(),
+    // check if the commands starts with `select count(*) from` in any case
+    _ if command.to_lowercase().starts_with("select count(*) from") => {
+      let count = sqlite.count_table_rows(command)?;
+      println!("{count}");
+      Ok(())
+    }
+    _ => anyhow::bail!("Unknown command: {}", command),
+  }
 }

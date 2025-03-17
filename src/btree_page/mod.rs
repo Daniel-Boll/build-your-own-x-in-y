@@ -54,6 +54,18 @@ impl BTree {
       cells,
     }
   }
+
+  // pub fn find_table_page_number(&self, table_name: &str) -> anyhow::Result<u32> {
+  //   for cell in &self.cells {
+  //     if let Cell::TableLeaf { record, .. } = cell {
+  //       if record.values[2].as_text() == table_name {
+  //         return Ok(record.values[3].as_integer() as u32);
+  //       }
+  //     }
+  //   }
+  //
+  //   anyhow::bail!("Table not found: {}", table_name);
+  // }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -69,12 +81,12 @@ pub struct Header {
 impl Header {
   pub fn new(page: Page) -> Self {
     #[allow(clippy::identity_op)]
-    let page_type = page.read_u8(page.offset + 0);
-    let first_freeblock = page.read_u16(page.offset + 1);
-    let num_cells = page.read_u16(page.offset + 3);
-    let start_cell_content = page.read_u16(page.offset + 5);
-    let num_fragmented_free_bytes = page.read_u8(page.offset + 7);
-    let right_most_pointer = page.read_u32(page.offset + 8);
+    let page_type = page.read_u8(0);
+    let first_freeblock = page.read_u16(1);
+    let num_cells = page.read_u16(3);
+    let start_cell_content = page.read_u16(5);
+    let num_fragmented_free_bytes = page.read_u8(7);
+    let right_most_pointer = page.read_u32(8);
 
     Self {
       page_type,
