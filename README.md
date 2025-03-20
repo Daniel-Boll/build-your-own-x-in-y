@@ -14,8 +14,8 @@ This repository is dedicated to showcasing solutions to common system-level prob
 | Build your own Git           |      |     |     |
 | Build your own DNS server    |      |     |     |
 | Build your own grep          |      |     |     |
-| Build your own BitTorrent    |      |     |     |
-| Build your own Kafka         |      |     | [4/19 Stages](https://github.com/Daniel-Boll/build-your-own-x-in-y/tree/bittorrent-zig) |
+| Build your own BitTorrent    |      |     | [4/19 Stages](https://github.com/Daniel-Boll/build-your-own-x-in-y/tree/bittorrent-zig) |
+| Build your own Kafka         |      |     |     |
 
 ## How It Works
 
