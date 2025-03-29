@@ -8,7 +8,7 @@ This repository is dedicated to showcasing solutions to common system-level prob
 |-----------------------------|------|-----|-----|
 | Build your own HTTP server   |      | [11/11 Stages](https://github.com/Daniel-Boll/build-your-own-x-in-y/tree/http-server-go) | |
 | Build your own Redis         |      |     |     |
-| Build your own SQLite        | [4/9 Stages](https://github.com/Daniel-Boll/build-your-own-x-in-y/tree/sqlite-rust) |     |     |
+| Build your own SQLite        | [6/9 Stages](https://github.com/Daniel-Boll/build-your-own-x-in-y/tree/sqlite-rust) |     |     |
 | Build your own Interpreter   |      |     |     |
 | Build your own Shell         |      |     |     |
 | Build your own Git           |      |     |     |
