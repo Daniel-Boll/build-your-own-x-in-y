@@ -14,7 +14,6 @@ use std::fs::File;
 pub mod btree_page;
 pub mod dbheader;
 pub mod parser;
-pub mod varint;
 
 pub struct SQLite {
   file: File,
