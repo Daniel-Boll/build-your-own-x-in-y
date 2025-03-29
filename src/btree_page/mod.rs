@@ -54,18 +54,6 @@ impl BTree {
       cells,
     }
   }
-
-  // pub fn find_table_page_number(&self, table_name: &str) -> anyhow::Result<u32> {
-  //   for cell in &self.cells {
-  //     if let Cell::TableLeaf { record, .. } = cell {
-  //       if record.values[2].as_text() == table_name {
-  //         return Ok(record.values[3].as_integer() as u32);
-  //       }
-  //     }
-  //   }
-  //
-  //   anyhow::bail!("Table not found: {}", table_name);
-  // }
 }
 
 #[derive(Debug, Clone, Copy)]

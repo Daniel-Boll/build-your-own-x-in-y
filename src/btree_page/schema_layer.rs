@@ -1,5 +1,8 @@
 use anyhow::{Result, anyhow};
-use std::convert::TryInto;
+use std::{
+  convert::TryInto,
+  fmt::{self, Display, Formatter},
+};
 
 /// # [Record Format](https://www.sqlite.org/fileformat.html#record-format)
 ///
@@ -64,6 +67,18 @@ impl Value {
     match self {
       Value::Text(value) => value,
       _ => panic!("Value is not a text"),
+    }
+  }
+}
+
+impl Display for Value {
+  fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+    match self {
+      Value::Null => write!(f, "NULL"),
+      Value::Integer(value) => write!(f, "{}", value),
+      Value::Float(value) => write!(f, "{}", value),
+      Value::Blob(value) => write!(f, "{:?}", value),
+      Value::Text(value) => write!(f, "{}", value),
     }
   }
 }
@@ -154,3 +169,4 @@ impl Record {
     }
   }
 }
+
