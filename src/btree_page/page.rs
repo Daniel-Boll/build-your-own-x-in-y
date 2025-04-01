@@ -4,8 +4,8 @@ use std::{
   ops::Range,
 };
 
-use anyhow::Result;
 use crate::btree_page::schema_layer::Record;
+use anyhow::Result;
 
 #[derive(Debug, Clone)]
 pub struct Page {
@@ -24,7 +24,11 @@ impl Page {
     file.seek(SeekFrom::Start(offset as u64))?;
     let mut data = vec![0; page_size as usize];
     file.read_exact(&mut data)?;
-    Ok(Self { data, offset, page_number })
+    Ok(Self {
+      data,
+      offset,
+      page_number,
+    })
   }
 
   fn at(&self, offset: usize) -> u8 {
@@ -86,7 +90,8 @@ impl Page {
 
     for i in 0..num_cells {
       let offset_index = 8 + (i as usize * 2);
-      let cell_offset = u16::from_be_bytes([self.data[offset_index], self.data[offset_index + 1]]) as usize;
+      let cell_offset =
+        u16::from_be_bytes([self.data[offset_index], self.data[offset_index + 1]]) as usize;
 
       let record = Record::parse(&self.data[cell_offset..]).expect("This to work");
       records.push(record);

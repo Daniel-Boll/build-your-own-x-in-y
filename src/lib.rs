@@ -1,6 +1,6 @@
 use itertools::Itertools;
 use parser::schema;
-use parser::select::{Column, SelectStatement, Condition};
+use parser::select::{Column, Condition, SelectStatement};
 use tracing::{debug, trace};
 
 use crate::btree_page::BTree;
@@ -204,7 +204,13 @@ impl SQLite {
           None
         };
 
-        self.print_rows(&btree, &column_positions, &rowid_alias, where_column_pos, &stmt.where_clause)?;
+        self.print_rows(
+          &btree,
+          &column_positions,
+          &rowid_alias,
+          where_column_pos,
+          &stmt.where_clause,
+        )?;
       }
     }
 

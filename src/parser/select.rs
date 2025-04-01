@@ -78,7 +78,7 @@ fn string_literal(input: &str) -> IResult<&str, String> {
 }
 
 fn value(input: &str) -> IResult<&str, String> {
-  alt((string_literal, identifier)).parse(input)
+  alt((string_literal, identifier)).parse(input) // NOTE: not sure if I should keep both string_literal and identifier, but for now this should be fine
 }
 
 fn column(input: &str) -> IResult<&str, Column> {
