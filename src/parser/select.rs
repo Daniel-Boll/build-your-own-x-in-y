@@ -2,7 +2,7 @@ use miette::{Result, SourceSpan};
 use nom::{
   IResult, Parser,
   branch::alt,
-  bytes::complete::{tag_no_case, take_while1},
+  bytes::complete::{tag, tag_no_case, take_while1},
   character::complete::multispace0,
   combinator::{map, opt},
   multi::separated_list1,
@@ -28,6 +28,20 @@ pub struct Condition {
   left: String,
   operator: String,
   right: String,
+}
+
+impl Condition {
+  pub fn left(&self) -> &str {
+    &self.left
+  }
+
+  pub fn operator(&self) -> &str {
+    &self.operator
+  }
+
+  pub fn right(&self) -> &str {
+    &self.right
+  }
 }
 
 use super::error::SqlError;
@@ -56,6 +70,17 @@ fn identifier(input: &str) -> IResult<&str, String> {
   Ok((rest, ident.to_string()))
 }
 
+fn string_literal(input: &str) -> IResult<&str, String> {
+  let (input, _) = tag("'")(input)?;
+  let (input, content) = take_while1(|c| c != '\'')(input)?;
+  let (input, _) = tag("'")(input)?;
+  Ok((input, content.to_string()))
+}
+
+fn value(input: &str) -> IResult<&str, String> {
+  alt((string_literal, identifier)).parse(input)
+}
+
 fn column(input: &str) -> IResult<&str, Column> {
   alt((
     map(tag_no_case("*"), |_| Column::All),
@@ -82,7 +107,7 @@ fn condition(input: &str) -> IResult<&str, Condition> {
       tag_no_case("<="),
       tag_no_case(">="),
     ))),
-    identifier,
+    value,
   )
     .parse(input)
     .map(|(rest, (left, operator, right))| {

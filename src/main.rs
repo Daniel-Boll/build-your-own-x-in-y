@@ -1,6 +1,5 @@
 #![feature(str_as_str)]
 
-use anyhow::bail;
 use codecrafters_sqlite::{SQLite, parser::select};
 use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -40,10 +39,6 @@ fn handle_command(command: &str, args: &[String]) -> anyhow::Result<()> {
 
 fn handle_sql(sqlite: &mut SQLite, command: &str) -> anyhow::Result<()> {
   let stmt = select::parse(command).map_err(|e| anyhow::anyhow!("Invalid SQL: {}", e))?;
-
-  if stmt.where_clause.is_some() {
-    bail!("WHERE clause not supported yet");
-  }
 
   sqlite.select_columns(&stmt)
 }

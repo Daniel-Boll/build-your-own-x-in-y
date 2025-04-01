@@ -1,6 +1,6 @@
 use itertools::Itertools;
 use parser::schema;
-use parser::select::{Column, SelectStatement};
+use parser::select::{Column, SelectStatement, Condition};
 use tracing::{debug, trace};
 
 use crate::btree_page::BTree;
@@ -145,6 +145,7 @@ impl SQLite {
       }
       cols => {
         let has_all = cols.iter().any(|c| matches!(c, Column::All));
+        let column_map_clone = column_map.clone();
         let column_positions: Vec<(String, usize)> = if has_all {
           if cols.len() > 1 {
             anyhow::bail!("SELECT * cannot be combined with other columns");
@@ -179,7 +180,31 @@ impl SQLite {
         };
 
         debug!("Column positions: {:?}", column_positions);
-        self.print_rows(&btree, &column_positions, &rowid_alias)?;
+
+        // Get WHERE clause column position if present
+        let where_column_pos = if let Some(condition) = &stmt.where_clause {
+          debug!("WHERE clause: {:?}", condition);
+          let where_col_upper = condition.left().to_uppercase();
+          if let Some(alias) = &rowid_alias {
+            if where_col_upper == alias.to_uppercase() || where_col_upper == "ROWID" {
+              Some(usize::MAX)
+            } else {
+              column_map_clone
+                .iter()
+                .find(|(k, _)| k.to_uppercase() == where_col_upper)
+                .map(|(_, &pos)| pos)
+            }
+          } else {
+            column_map_clone
+              .iter()
+              .find(|(k, _)| k.to_uppercase() == where_col_upper)
+              .map(|(_, &pos)| pos)
+          }
+        } else {
+          None
+        };
+
+        self.print_rows(&btree, &column_positions, &rowid_alias, where_column_pos, &stmt.where_clause)?;
       }
     }
 
@@ -191,6 +216,8 @@ impl SQLite {
     btree: &BTree,
     column_positions: &[(String, usize)],
     _rowid_alias: &Option<String>,
+    where_column_pos: Option<usize>,
+    where_clause: &Option<Condition>,
   ) -> anyhow::Result<()> {
     for cell in &btree.cells {
       if let Cell::TableLeaf { row_id, .. } = cell {
@@ -204,8 +231,24 @@ impl SQLite {
             .map(|v| v.to_string())
             .collect::<Vec<_>>()
         );
-        let mut row = Vec::new();
 
+        // Check WHERE clause condition if present
+        if let (Some(pos), Some(condition)) = (where_column_pos, where_clause) {
+          let value = if pos == usize::MAX {
+            row_id.to_string()
+          } else if pos < record.values.len() {
+            record.values[pos + 1].to_string()
+          } else {
+            "NULL".to_string()
+          };
+
+          // For now, we only support equality comparison
+          if value != condition.right() {
+            continue;
+          }
+        }
+
+        let mut row = Vec::new();
         for (name, pos) in column_positions {
           trace!("Processing column: {} at position: {}", name, pos);
           if *pos == usize::MAX {
